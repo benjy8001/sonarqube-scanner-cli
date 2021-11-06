@@ -1,0 +1,58 @@
+#!/bin/sh
+
+
+
+real_path () {
+  target=$1
+  (
+  while true; do
+    cd "$(dirname "$target")"
+    target=$(basename "$target")
+    test -L "$target" || break
+    target=$(readlink "$target")
+  done
+
+  echo "$(pwd -P)/$target"
+  )
+}
+
+script_path=$(real_path "$0")
+sonar_scanner_home=$(dirname "$script_path")/..
+
+# make it fully qualified
+sonar_scanner_home=$(cd "$sonar_scanner_home" && pwd -P)
+jar_file=$(ls -1 "${sonar_scanner_home}"/lib/*.jar|head -n1)
+
+# check that sonar_scanner_home has been correctly set
+if [ ! -f "$jar_file" ] ; then
+  echo "File does not exist: $jar_file"
+  echo "'$sonar_scanner_home' does not point to a valid installation directory: $sonar_scanner_home"
+  exit 1
+fi
+
+use_embedded_jre=false
+if [ "$use_embedded_jre" = true ]; then
+  export JAVA_HOME=$sonar_scanner_home/jre
+fi
+
+if [ -n "$JAVA_HOME" ]
+then
+  java_cmd="$JAVA_HOME/bin/java"
+else
+  java_cmd="$(which java)"
+fi
+
+if [ -z "$java_cmd" -o ! -x "$java_cmd" ] ; then
+  echo "Could not find 'java' executable in JAVA_HOME or PATH."
+  exit 1
+fi
+
+exec "$java_cmd" \
+ -jar $jar_file \
+  --project $SONAR_PROJECT_KEY \
+  --server http://$SONAR_HOST:9000 \
+  --token $SONAR_LOGIN \
+  --disable-spreadsheet --disable-csv \
+  --language fr_FR \
+  --output /project \
+  $*

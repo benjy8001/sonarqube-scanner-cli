@@ -21,7 +21,7 @@ sonar_scanner_home=$(dirname "$script_path")/..
 
 # make it fully qualified
 sonar_scanner_home=$(cd "$sonar_scanner_home" && pwd -P)
-jar_file=$(ls -1 "${sonar_scanner_home}"/lib/*.jar|head -n1)
+jar_file=$(ls -1 "${sonar_scanner_home}"/lib/*.jar|tail -n1)
 
 # check that sonar_scanner_home has been correctly set
 if [ ! -f "$jar_file" ] ; then
@@ -50,7 +50,7 @@ fi
 exec "$java_cmd" \
  -jar $jar_file \
   --project $SONAR_PROJECT_KEY \
-  --server http://$SONAR_HOST:9000 \
+  --server $SONAR_HOST \
   --token $SONAR_LOGIN \
   --disable-spreadsheet --disable-csv \
   --language fr_FR \
